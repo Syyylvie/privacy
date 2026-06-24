@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1",
+    "type": "feature_request",
+    "title": "支持语音输入日程",
+    "content": "希望 agent 能通过语音直接添加日程，方便老年用户使用。",
+    "email": "",
+    "created_at": "2026-06-20T10:00:00",
+    "reply": "已纳入 v1.2 规划，预计下月上线语音模块。"
+  },
+  {
+    "id": "2",
+    "type": "question",
+    "title": "ADL 评估报告如何导出？",
+    "content": "完成 ADL 自动评估后，找不到导出 PDF 的入口。",
+    "email": "user@example.com",
+    "created_at": "2026-06-22T14:30:00",
+    "reply": ""
+  }
+]

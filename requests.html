@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>提交请求 - App Privacy</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="index.html" class="site-logo">App Privacy</a>
+      <nav class="site-nav">
+        <a href="index.html">隐私政策</a>
+        <a href="requests.html" class="active">提交请求</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h1>提交请求</h1>
+    <div class="form-card">
+      <p class="form-intro">如需查询、更正或删除您的个人信息，或提出其他与隐私相关的请求，请填写以下表单。我们将在收到请求后的合理期限内予以处理。</p>
+
+      <div id="form-message" class="form-message" hidden></div>
+
+      <form id="request-form" novalidate>
+        <div class="form-group">
+          <label for="request-type">请求类型</label>
+          <select id="request-type" name="request_type" required>
+            <option value="">请选择请求类型</option>
+            <option value="data_access">个人信息查询</option>
+            <option value="data_correction">个人信息更正</option>
+            <option value="data_deletion">个人信息删除</option>
+            <option value="account_deletion">账号注销</option>
+            <option value="other">其他</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="user-id">用户 ID</label>
+          <input type="text" id="user-id" name="user_id" placeholder="请输入您的用户 ID" required>
+          <p class="hint">登录后可从个人中心查看您的用户 ID</p>
+        </div>
+
+        <div class="form-group">
+          <label for="email">联系邮箱</label>
+          <input type="email" id="email" name="email" placeholder="用于接收处理结果通知" required>
+        </div>
+
+        <div class="form-group">
+          <label for="description">请求详情</label>
+          <textarea id="description" name="description" placeholder="请详细描述您的请求内容" required></textarea>
+        </div>
+
+        <div class="form-checkbox">
+          <input type="checkbox" id="consent" name="consent" required>
+          <label for="consent">我已阅读并同意<a href="index.html">隐私政策</a>，确认所提交信息真实有效。</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submit-btn">提交请求</button>
+      </form>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 App Privacy. All rights reserved.</p>
+  </footer>
+
+  <script>
+  // 配置其一即可：Formspree 端点（推荐）或联系邮箱（mailto 备选）
+    const FORMSPREE_ENDPOINT = '';
+    const CONTACT_EMAIL = 'carry.08@sjtu.edu.cn';
+
+    const form = document.getElementById('request-form');
+    const messageEl = document.getElementById('form-message');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function showMessage(text, type) {
+      messageEl.textContent = text;
+      messageEl.className = 'form-message ' + type;
+      messageEl.hidden = false;
+      messageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function clearErrors() {
+      form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+    }
+
+    function validate() {
+      clearErrors();
+      let valid = true;
+
+      const fields = [
+        { el: document.getElementById('request-type'), check: v => v !== '' },
+        { el: document.getElementById('user-id'), check: v => v.trim() !== '' },
+        { el: document.getElementById('email'), check: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
+        { el: document.getElementById('description'), check: v => v.trim() !== '' },
+      ];
+
+      for (const { el, check } of fields) {
+        if (!check(el.value)) {
+          el.classList.add('error');
+          valid = false;
+        }
+      }
+
+      const consent = document.getElementById('consent');
+      if (!consent.checked) {
+        valid = false;
+      }
+
+      return valid;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validate()) {
+        showMessage('请填写所有必填项并勾选同意条款。', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '提交中…';
+      messageEl.hidden = true;
+
+      const data = {
+        request_type: document.getElementById('request-type').value,
+        user_id: document.getElementById('user-id').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        description: document.getElementById('description').value.trim(),
+      };
+
+      const typeLabels = {
+        data_access: '个人信息查询',
+        data_correction: '个人信息更正',
+        data_deletion: '个人信息删除',
+        account_deletion: '账号注销',
+        other: '其他',
+      };
+
+      try {
+        if (!FORMSPREE_ENDPOINT && CONTACT_EMAIL) {
+          const subject = encodeURIComponent('隐私请求：' + (typeLabels[data.request_type] || data.request_type));
+          const body = encodeURIComponent(
+            '请求类型：' + (typeLabels[data.request_type] || data.request_type) + '\n' +
+            '用户 ID：' + data.user_id + '\n' +
+            '联系邮箱：' + data.email + '\n\n' +
+            '请求详情：\n' + data.description
+          );
+          window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + subject + '&body=' + body;
+          showMessage('正在打开邮件客户端，请确认发送。', 'success');
+          return;
+        }
+
+        if (!FORMSPREE_ENDPOINT) {
+          showMessage('表单尚未配置接收方式，请联系网站管理员。', 'error');
+          return;
+        }
+
+        const response = await fetch(FORMSPREE_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) throw new Error('提交失败');
+
+        showMessage('请求已成功提交，我们将在合理期限内通过邮箱与您联系。', 'success');
+        form.reset();
+      } catch {
+        showMessage('提交失败，请稍后重试。', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '提交请求';
+      }
+    });
+  </script>
+</body>
+</html>
